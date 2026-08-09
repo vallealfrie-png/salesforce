@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Executive Sales Intelligence Dashboard | Enterprise Portfolio</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              900: '#0c4a6e',
+              950: '#082f49',
+            },
+            accent: {
+              green: '#10b981',
+              red: '#ef4444',
+              amber: '#f59e0b',
+              blue: '#3b82f6',
+              gold: '#eab308',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Highcharts -->
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/funnel.js"></script>
+  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+  <!-- GSAP & ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <!-- AOS (Animate On Scroll) -->
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    
+    /* Highcharts Dark Theme Overrides */
+    .highcharts-container {
+      font-family: 'Inter', sans-serif !important;
+    }
+    .highcharts-background {
+      fill: transparent !important;
+    }
+    .highcharts-title, .highcharts-subtitle {
+      fill: #f8fafc !important;
+      font-weight: 600 !important;
+    }
+    .highcharts-legend-item text {
+      fill: #94a3b8 !important;
+      font-size: 12px !important;
+    }
+    .highcharts-axis-line, .highcharts-tick {
+      stroke: #334155 !important;
+    }
+    .highcharts-grid-line {
+      stroke: #1e293b !important;
+      stroke-dasharray: 2 2;
+    }
+    .highcharts-axis-labels text {
+      fill: #64748b !important;
+    }
+    .highcharts-tooltip-box {
+      fill: #0f172a !important;
+      fill-opacity: 0.95;
+      stroke: #334155 !important;
+      stroke-width: 1px;
+      border-radius: 8px;
+    }
+    .highcharts-tooltip text {
+      fill: #f8fafc !important;
+    }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.5);
+    }
+    .glass-card:hover {
+      border-color: rgba(100, 116, 139, 0.6);
+    }
+  </style>
+</head>
+
+<body class="h-full antialiased font-sans bg-slate-950 text-slate-100 flex flex-col min-h-screen">
+
+  <!-- INITIAL LOADING SCREEN (GSAP Animated) -->
+  <div id="loading-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950">
+    <div class="flex items-center space-x-3 mb-6">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+        <i data-lucide="line-chart" class="w-6 h-6 text-white"></i>
+      </div>
+      <span class="text-2xl font-bold tracking-tight text-white">Sales<span class="text-sky-400">IQ</span></span>
+    </div>
+    <div class="w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden mb-4">
+      <div id="loading-bar" class="w-0 h-full bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full"></div>
+    </div>
+    <p id="loading-status" class="text-xs font-mono text-slate-400 tracking-wider uppercase">Initializing Analytics Engine...</p>
+  </div>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center space-x-4">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/20">
+          <i data-lucide="bar-chart-3" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-lg font-bold text-white tracking-tight">Sales<span class="text-sky-400">IQ</span></span>
+            <span class="text-xs px-2 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800/50 font-semibold tracking-wider">EXECUTIVE</span>
+          </div>
+          <p class="text-xs text-slate-400">Commercial Intelligence Platform</p>
+        </div>
+      </div>
+
+      <!-- Header Controls / Metadata -->
+      <div class="flex items-center space-x-4">
+        <div class="hidden md:flex flex-col items-end text-xs text-slate-400">
+          <span class="flex items-center space-x-1">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-500"></i>
+            <span>FY2025 Reporting Period</span>
+          </span>
+          <span class="flex items-center space-x-1 mt-0.5 text-slate-500">
+            <i data-lucide="clock" class="w-3 h-3"></i>
+            <span>Refreshed: <span id="last-refreshed-time">Just now</span></span>
+          </span>
+        </div>
+
+        <span class="px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+          DEMO DATA
+        </span>
+
+        <button id="theme-toggle" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors" title="Toggle Visual Style">
+          <i data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- HERO SECTION -->
+    <section id="hero-section" class="glass-card rounded-2xl p-6 lg:p-8 relative overflow-hidden">
+      <div class="absolute -right-12 -top-12 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-12 -bottom-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Sales Performance Overview</h1>
+          <p class="mt-2 text-sm sm:text-base text-slate-400 max-w-3xl">
+            Executive view of recognized revenue, operational profitability, sales force achievement, and pipeline commercial outcomes across active regions.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-right">
+            <p class="text-xs text-slate-400 font-medium">Target Pace</p>
+            <p id="hero-target-pace" class="text-lg font-bold text-emerald-400">--%</p>
+          </div>
+          <div class="px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-right">
+            <p class="text-xs text-slate-400 font-medium">Recognized Revenue</p>
+            <p id="hero-revenue-summary" class="text-lg font-bold text-white">₱0</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXECUTIVE KPI CARDS -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-aos="fade-up">
+      <!-- Card 1: Revenue -->
+      <div class="glass-card rounded-xl p-5 relative overflow-hidden transition-all duration-300 hover:-translate-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Total Revenue</span>
+          <div class="p-2 rounded-lg bg-sky-500/10 text-sky-400">
+            <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3">
+          <h2 id="kpi-revenue" class="text-2xl sm:text-3xl font-bold text-white font-mono">₱0</h2>
+          <div class="mt-2 flex items-center justify-between text-xs">
+            <span class="text-slate-400">Recognized Closed Won</span>
+            <span id="kpi-revenue-trend" class="font-medium text-emerald-400 flex items-center gap-1">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> +0% vs target
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Gross Profit -->
+      <div class="glass-card rounded-xl p-5 relative overflow-hidden transition-all duration-300 hover:-translate-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Gross Profit</span>
+          <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <i data-lucide="wallet" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3">
+          <h2 id="kpi-profit" class="text-2xl sm:text-3xl font-bold text-white font-mono">₱0</h2>
+          <div class="mt-2 flex items-center justify-between text-xs">
+            <span class="text-slate-400">Revenue minus Cost</span>
+            <span class="text-slate-400 font-mono" id="kpi-cost-subtext">Cost: ₱0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Profit Margin -->
+      <div class="glass-card rounded-xl p-5 relative overflow-hidden transition-all duration-300 hover:-translate-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Profit Margin</span>
+          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <i data-lucide="percent" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3">
+          <h2 id="kpi-margin" class="text-2xl sm:text-3xl font-bold text-white font-mono">0.0%</h2>
+          <div class="mt-2 flex items-center justify-between text-xs">
+            <span class="text-slate-400">Operational Yield</span>
+            <span id="kpi-margin-status" class="text-emerald-400 font-medium">Healthy</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Target Achievement -->
+      <div class="glass-card rounded-xl p-5 relative overflow-hidden transition-all duration-300 hover:-translate-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Target Achievement</span>
+          <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+            <i data-lucide="target" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3">
+          <h2 id="kpi-target-achieved" class="text-2xl sm:text-3xl font-bold text-white font-mono">0.0%</h2>
+          <div class="mt-2 flex items-center justify-between text-xs">
+            <span class="text-slate-400" id="kpi-applicable-target">Target: ₱0</span>
+            <span id="kpi-target-badge" class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/20 text-amber-400">On Track</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5: Closed Won Deals -->
+      <div class="glass-card rounded-xl p-5 relative overflow-hidden transition-all duration-300 hover:-translate-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Closed Won Deals</span>
+          <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3">
+          <h2 id="kpi-won-deals" class="text-2xl sm:text-3xl font-bold text-white font-mono">0</h2>
+          <div class="mt-2 flex items-center justify-between text-xs">
+            <span class="text-slate-400" id="kpi-total-opps">Out of 0 Opps</span>
+            <span class="text-slate-300 font-medium" id="kpi-win-rate">Win Rate: 0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 6: Average Deal Size -->
+      <div class="glass-card rounded-xl p-5 relative overflow-hidden transition-all duration-300 hover:-translate-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Average Deal Size</span>
+          <div class="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+            <i data-lucide="scale" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3">
+          <h2 id="kpi-avg-deal" class="text-2xl sm:text-3xl font-bold text-white font-mono">₱0</h2>
+          <div class="mt-2 flex items-center justify-between text-xs">
+            <span class="text-slate-400">Per Recognized Deal</span>
+            <span class="text-slate-400 font-mono" id="kpi-units-sold">0 Units Sold</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILTER TOOLBAR -->
+    <section class="glass-card rounded-2xl p-5 space-y-4" data-aos="fade-up">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="filter" class="w-5 h-5 text-sky-400"></i>
+          <h3 class="text-base font-semibold text-white">Executive Control Toolbar</h3>
+          <span class="text-xs text-slate-400">(Dynamic Multi-attribute Filtering)</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="btn-apply-filters" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium transition-colors flex items-center space-x-1.5 shadow-md shadow-sky-600/20">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            <span>Apply Filters</span>
+          </button>
+          <button id="btn-reset-filters" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors flex items-center space-x-1.5">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>Reset All</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Select Inputs -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div>
+          <label class="block text-xs text-slate-400 font-medium mb-1">Region</label>
+          <select id="filter-region" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+            <option value="ALL">All Regions</option>
+            <option value="NCR">NCR</option>
+            <option value="North Luzon">North Luzon</option>
+            <option value="South Luzon">South Luzon</option>
+            <option value="Visayas">Visayas</option>
+            <option value="Mindanao">Mindanao</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 font-medium mb-1">Salesperson</label>
+          <select id="filter-salesperson" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+            <option value="ALL">All Salespeople</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 font-medium mb-1">Category</label>
+          <select id="filter-category" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+            <option value="ALL">All Categories</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 font-medium mb-1">Product</label>
+          <select id="filter-product" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+            <option value="ALL">All Products</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 font-medium mb-1">Status Outcome</label>
+          <select id="filter-status" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+            <option value="ALL">All Statuses</option>
+            <option value="Closed Won">Closed Won</option>
+            <option value="Closed Lost">Closed Lost</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 font-medium mb-1">Month / Period</label>
+          <select id="filter-month" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+            <option value="ALL">Full Year 2025</option>
+            <option value="1">January 2025</option>
+            <option value="2">February 2025</option>
+            <option value="3">March 2025</option>
+            <option value="4">April 2025</option>
+            <option value="5">May 2025</option>
+            <option value="6">June 2025</option>
+            <option value="7">July 2025</option>
+            <option value="8">August 2025</option>
+            <option value="9">September 2025</option>
+            <option value="10">October 2025</option>
+            <option value="11">November 2025</option>
+            <option value="12">December 2025</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Active Filter Chips Container -->
+      <div id="active-filter-chips" class="flex flex-wrap items-center gap-2 pt-2">
+        <span class="text-xs text-slate-400 italic">No active filters applied</span>
+      </div>
+    </section>
+
+    <!-- CHARTS GRID 1: Revenue vs Target & Profitability -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6" data-aos="fade-up">
+      <!-- Revenue vs Target Line Chart -->
+      <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white">Revenue vs. Monthly Target</h3>
+            <p class="text-xs text-slate-400">Comparison of recognized Closed Won revenue against deduplicated targets</p>
+          </div>
+          <span class="p-2 rounded-lg bg-sky-500/10 text-sky-400"><i data-lucide="trending-up" class="w-5 h-5"></i></span>
+        </div>
+        <div id="chart-revenue-target" class="w-full h-80"></div>
+      </div>
+
+      <!-- Profitability Combination Chart -->
+      <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white">Revenue & Operational Profitability</h3>
+            <p class="text-xs text-slate-400">Monthly gross profit trajectory and operational margin %</p>
+          </div>
+          <span class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400"><i data-lucide="pie-chart" class="w-5 h-5"></i></span>
+        </div>
+        <div id="chart-profitability" class="w-full h-80"></div>
+      </div>
+    </section>
+
+    <!-- SECTION: SALES FORCE PERFORMANCE -->
+    <section class="glass-card rounded-2xl p-6 space-y-6" data-aos="fade-up">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h3 class="text-xl font-bold text-white">Sales Force Performance</h3>
+          <p class="text-xs text-slate-400">Commercial rankings, target fulfillment, deal throughput, and win rates by representative</p>
+        </div>
+        <div class="text-xs text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+          Click any salesperson row or bar to drill down
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Revenue Bar Chart (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col justify-center">
+          <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Revenue Ranking by Rep</h4>
+          <div id="chart-salesperson-bars" class="w-full h-80"></div>
+        </div>
+
+        <!-- Salesperson Leaderboard Table (7 cols) -->
+        <div class="lg:col-span-7 overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="text-[11px] font-semibold text-slate-400 uppercase bg-slate-900/80 border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-3">Rank</th>
+                <th class="py-3 px-3">Salesperson</th>
+                <th class="py-3 px-3">Region</th>
+                <th class="py-3 px-3 text-right">Revenue</th>
+                <th class="py-3 px-3 text-right">Target</th>
+                <th class="py-3 px-3 text-right">Achv %</th>
+                <th class="py-3 px-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-salesperson-leaderboard" class="divide-y divide-slate-800/60 font-mono">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHARTS GRID 2: Sales Funnel & Regional Performance -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6" data-aos="fade-up">
+      <!-- Sales Funnel / Outcomes -->
+      <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white">Sales Pipeline Outcomes</h3>
+            <p class="text-xs text-slate-400">Conversion breakdown: Closed Won vs. Closed Lost vs. Cancelled</p>
+          </div>
+          <span class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="filter" class="w-5 h-5"></i></span>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+          <div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <p class="text-[10px] text-emerald-400 uppercase font-semibold">Closed Won</p>
+            <p id="funnel-won-val" class="text-sm font-bold text-white font-mono mt-0.5">₱0</p>
+          </div>
+          <div class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20">
+            <p class="text-[10px] text-rose-400 uppercase font-semibold">Closed Lost</p>
+            <p id="funnel-lost-val" class="text-sm font-bold text-white font-mono mt-0.5">₱0</p>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-800 border border-slate-700">
+            <p class="text-[10px] text-slate-400 uppercase font-semibold">Cancelled</p>
+            <p id="funnel-cancelled-val" class="text-sm font-bold text-white font-mono mt-0.5">₱0</p>
+          </div>
+        </div>
+
+        <div id="chart-sales-funnel" class="w-full h-64"></div>
+      </div>
+
+      <!-- Regional Performance -->
+      <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-white">Regional Performance</h3>
+            <p class="text-xs text-slate-400">Revenue generation & target achievement across major territorial markets</p>
+          </div>
+          <span class="p-2 rounded-lg bg-amber-500/10 text-amber-400"><i data-lucide="globe" class="w-5 h-5"></i></span>
+        </div>
+        <div id="chart-regional-bars" class="w-full h-80"></div>
+      </div>
+    </section>
+
+    <!-- SECTION: PRODUCT & CUSTOMER INTELLIGENCE -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6" data-aos="fade-up">
+      <!-- Product & Category Intelligence -->
+      <div class="glass-card rounded-2xl p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="text-lg font-bold text-white">Product & Category Intelligence</h3>
+            <p class="text-xs text-slate-400">Revenue contribution mix by software and service categories</p>
+          </div>
+          <span class="p-2 rounded-lg bg-purple-500/10 text-purple-400"><i data-lucide="package" class="w-5 h-5"></i></span>
+        </div>
+        <div id="chart-category-donut" class="w-full h-64"></div>
+      </div>
+
+      <!-- Top Customers Intelligence -->
+      <div class="glass-card rounded-2xl p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="text-lg font-bold text-white">Top 10 Enterprise Accounts</h3>
+            <p class="text-xs text-slate-400">Ranked by recognized Closed Won revenue contribution</p>
+          </div>
+          <span class="p-2 rounded-lg bg-sky-500/10 text-sky-400"><i data-lucide="building-2" class="w-5 h-5"></i></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="text-[11px] font-semibold text-slate-400 uppercase bg-slate-900/80 border-b border-slate-800">
+              <tr>
+                <th class="py-2.5 px-2">#</th>
+                <th class="py-2.5 px-2">Customer Account</th>
+                <th class="py-2.5 px-2 text-right">Revenue</th>
+                <th class="py-2.5 px-2 text-right">Deals</th>
+                <th class="py-2.5 px-2 text-right">Avg Size</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-top-customers" class="divide-y divide-slate-800/60 font-mono">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXECUTIVE INSIGHTS ENGINE -->
+    <section class="glass-card rounded-2xl p-6 space-y-4 border-l-4 border-l-sky-500" data-aos="fade-up">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 rounded-lg bg-sky-500/10 text-sky-400">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white">Executive Insights Engine</h3>
+            <p class="text-xs text-slate-400">Automated commercial synthesis generated from current active filters</p>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-md text-[11px] font-mono bg-slate-900 text-sky-400 border border-slate-800">
+          ALGORITHMIC SYNTHESIS
+        </span>
+      </div>
+
+      <div id="executive-insights-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+        <!-- Dynamically Populated -->
+      </div>
+    </section>
+
+    <!-- DETAILED TRANSACTION TABLE -->
+    <section class="glass-card rounded-2xl p-6 space-y-4" data-aos="fade-up">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h3 class="text-xl font-bold text-white">Detailed Sales Transactions</h3>
+          <p class="text-xs text-slate-400">Granular audit ledger of individual opportunities and financial records</p>
+        </div>
+
+        <!-- Global Search Input -->
+        <div class="relative w-full sm:w-72">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2"></i>
+          <input 
+            type="text" 
+            id="table-search-input"
+            placeholder="Search ID, customer, rep, product..." 
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+          />
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="overflow-x-auto rounded-lg border border-slate-800">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="text-[11px] font-semibold text-slate-400 uppercase bg-slate-900 border-b border-slate-800">
+            <tr>
+              <th class="py-3 px-3">Sale ID</th>
+              <th class="py-3 px-3">Date</th>
+              <th class="py-3 px-3">Salesperson</th>
+              <th class="py-3 px-3">Region</th>
+              <th class="py-3 px-3">Customer</th>
+              <th class="py-3 px-3">Product</th>
+              <th class="py-3 px-3 text-right">Qty</th>
+              <th class="py-3 px-3 text-right">Sales Amount</th>
+              <th class="py-3 px-3 text-right">Profit</th>
+              <th class="py-3 px-3 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-transactions" class="divide-y divide-slate-800/60 font-mono">
+            <!-- Dynamically Populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination & Status Counter -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 text-xs text-slate-400">
+        <div id="table-counter">Showing 0–0 of 0 records</div>
+        <div class="flex items-center space-x-2">
+          <button id="btn-prev-page" class="px-3 py-1.5 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed">Previous</button>
+          <span id="table-page-num" class="font-mono text-slate-200">Page 1 of 1</span>
+          <button id="btn-next-page" class="px-3 py-1.5 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="mt-auto border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 space-y-2">
+      <p class="font-medium">Portfolio Demonstration — Executive Sales Intelligence Dashboard</p>
+      <p class="text-[11px] text-slate-600">All displayed data is synthetic and does not represent real customers, transactions, organizations, or financial results.</p>
+    </div>
+  </footer>
+
+
+  <!-- MAIN APPLICATION JAVASCRIPT -->
+  <script>
+    /* ==========================================================================
+       1. SUPABASE CLIENT & MOCK FALLBACK ARCHITECTURE
+       ========================================================================== */
+    const SUPABASE_URL = "https://your-supabase-url.supabase.co";
+    const SUPABASE_ANON_KEY = "your-anon-key";
+    
+    let supabaseClient = null;
+    if (SUPABASE_URL !== "https://your-supabase-url.supabase.co") {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    // Global Dataset State
+    let rawDataset = [];
+    let filteredDataset = [];
+    
+    // Pagination & Search State
+    let currentPage = 1;
+    const pageSize = 15;
+    let currentSearchQuery = "";
+
+    // Global Active Filter State
+    let activeFilters = {
+      region: "ALL",
+      salesperson: "ALL",
+      category: "ALL",
+      product: "ALL",
+      status: "ALL",
+      month: "ALL"
+    };
+
+    /* ==========================================================================
+       2. SYNTHETIC DATA GENERATOR (Guarantees immediate zero-config operation)
+       ========================================================================== */
+    function generateSyntheticSalesData() {
+      const salesReps = [
+        { id: "REP001", name: "Miguel Santos", region: "NCR", target: 4500000 },
+        { id: "REP002", name: "Maria Clara", region: "NCR", target: 4200000 },
+        { id: "REP003", name: "Juan Dela Cruz", region: "North Luzon", target: 3500000 },
+        { id: "REP004", name: "Ana Reyes", region: "South Luzon", target: 3800000 },
+        { id: "REP005", name: "Jose Rizal", region: "Visayas", target: 3200000 },
+        { id: "REP006", name: "Lea Salonga", region: "Mindanao", target: 3000000 },
+        { id: "REP007", name: "Antonio Luna", region: "NCR", target: 4000000 },
+        { id: "REP008", name: "Gabriela Silang", region: "North Luzon", target: 2800000 }
+      ];
+
+      const products = [
+        { id: "PRD01", name: "Cloud Enterprise ERP", category: "Software", basePrice: 450000, margin: 0.75 },
+        { id: "PRD02", name: "Cybersecurity Suite Pro", category: "Software", basePrice: 280000, margin: 0.80 },
+        { id: "PRD03", name: "AI Analytics Platform", category: "Software", basePrice: 350000, margin: 0.70 },
+        { id: "PRD04", name: "Managed IT Infrastructure", category: "Services", basePrice: 180000, margin: 0.45 },
+        { id: "PRD05", name: "Cloud Migration Consulting", category: "Services", basePrice: 220000, margin: 0.50 },
+        { id: "PRD06", name: "Data Center Hardware Unit", category: "Hardware", basePrice: 850000, margin: 0.30 }
+      ];
+
+      const customers = [
+        "Ayala Enterprises", "SM Investments Corp", "San Miguel Commercial",
+        "PLDT Solutions", "Globe Telecom Systems", "BDO Unibank Tech",
+        "Metrobank Digital", "Aboitiz Power Systems", "Jollibee Food Group Tech",
+        "Robinsons Retail IT", "Megaworld Corp", "Alliance Global"
+      ];
+
+      const statuses = ["Closed Won", "Closed Won", "Closed Won", "Closed Lost", "Cancelled"];
+      const records = [];
+      let saleCounter = 1000;
+
+      for (let month = 1; month <= 12; month++) {
+        // ~130 transactions per month = ~1600 total records
+        for (let i = 0; i < 130; i++) {
+          saleCounter++;
+          const rep = salesReps[Math.floor(Math.random() * salesReps.length)];
+          const prod = products[Math.floor(Math.random() * products.length)];
+          const customer = customers[Math.floor(Math.random() * customers.length)];
+          const status = statuses[Math.floor(Math.random() * statuses.length)];
+          const qty = Math.floor(Math.random() * 5) + 1;
+          const discount = Math.random() < 0.4 ? Number((Math.random() * 0.15).toFixed(2)) : 0;
+          
+          const rawAmount = prod.basePrice * qty;
+          const sales_amount = Math.round(rawAmount * (1 - discount));
+          const cost = Math.round(sales_amount * (1 - prod.margin));
+          const profit = sales_amount - cost;
+
+          const day = Math.floor(Math.random() * 28) + 1;
+          const monthStr = month < 10 ? `0${month}` : `${month}`;
+          const dayStr = day < 10 ? `0${day}` : `${day}`;
+          const sale_date = `2025-${monthStr}-${dayStr}`;
+
+          records.push({
+            sale_id: `SL-${saleCounter}`,
+            sale_date: sale_date,
+            salesperson_id: rep.id,
+            salesperson: rep.name,
+            region: rep.region,
+            customer: customer,
+            product_id: prod.id,
+            product: prod.name,
+            category: prod.category,
+            quantity: qty,
+            unit_price: prod.basePrice,
+            discount: discount,
+            sales_amount: sales_amount,
+            cost: cost,
+            profit: profit,
+            monthly_target: rep.target,
+            status: status
+          });
+        }
+      }
+      return records;
+    }
+
+    /* ==========================================================================
+       3. DATA FETCHING & INITIALIZATION
+       ========================================================================== */
+    async function fetchSalesData() {
+      updateLoadingStatus("Connecting to database engine...");
+      
+      try {
+        if (supabaseClient) {
+          const { data, error } = await supabaseClient
+            .from('sales_data')
+            .select('*');
+          
+          if (!error && data && data.length > 0) {
+            rawDataset = data;
+            console.log("Data loaded from Supabase:", rawDataset.length, "records");
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Supabase fetch fallback to local synthetic generation:", err);
+      }
+
+      // Fallback synthetic dataset
+      updateLoadingStatus("Generating synthetic enterprise dataset...");
+      rawDataset = generateSyntheticSalesData();
+    }
+
+    /* ==========================================================================
+       4. CRITICAL BUSINESS LOGIC CALCULATIONS
+       ========================================================================== */
+    function calculateMetrics(dataset) {
+      // 1. Recognized Revenue Records (ONLY Closed Won)
+      const wonRecords = dataset.filter(r => r.status === "Closed Won");
+      const lostRecords = dataset.filter(r => r.status === "Closed Lost");
+      const cancelledRecords = dataset.filter(r => r.status === "Cancelled");
+
+      const revenue = wonRecords.reduce((sum, r) => sum + r.sales_amount, 0);
+      const cost = wonRecords.reduce((sum, r) => sum + r.cost, 0);
+      const profit = wonRecords.reduce((sum, r) => sum + r.profit, 0);
+      const profitMargin = revenue > 0 ? (profit / revenue) * 100 : 0;
+      const closedWonDeals = wonRecords.length;
+      const avgDealSize = closedWonDeals > 0 ? revenue / closedWonDeals : 0;
+      const unitsSold = wonRecords.reduce((sum, r) => sum + r.quantity, 0);
+
+      // Funnel metrics
+      const totalOpportunities = dataset.length;
+      const closedLostDeals = lostRecords.length;
+      const lostOpportunityValue = lostRecords.reduce((sum, r) => sum + r.sales_amount, 0);
+      const cancelledDeals = cancelledRecords.length;
+      const winRate = (closedWonDeals + closedLostDeals) > 0 
+        ? (closedWonDeals / (closedWonDeals + closedLostDeals)) * 100 
+        : 0;
+
+      // 2. CRITICAL DEDUPLICATED TARGET CALCULATION
+      // Group records by salesperson_id + year + month
+      const targetMap = new Map();
+      
+      dataset.forEach(r => {
+        const dateObj = new Date(r.sale_date);
+        const year = dateObj.getFullYear();
+        const month = dateObj.getMonth() + 1;
+        const key = `${r.salesperson_id}_${year}_${month}`;
+        
+        if (!targetMap.has(key)) {
+          targetMap.set(key, Number(r.monthly_target) || 0);
+        }
+      });
+
+      let applicableTarget = 0;
+      targetMap.forEach(targetVal => {
+        applicableTarget += targetVal;
+      });
+
+      const targetAchievement = applicableTarget > 0 ? (revenue / applicableTarget) * 100 : 0;
+
+      return {
+        revenue,
+        cost,
+        profit,
+        profitMargin,
+        closedWonDeals,
+        avgDealSize,
+        unitsSold,
+        applicableTarget,
+        targetAchievement,
+        totalOpportunities,
+        closedLostDeals,
+        lostOpportunityValue,
+        cancelledDeals,
+        winRate
+      };
+    }
+
+    /* ==========================================================================
+       5. FORMATTERS & UTILITY FUNCTIONS
+       ========================================================================== */
+    function formatPHP(val, compact = false) {
+      if (compact) {
+        if (val >= 1e9) return `₱${(val / 1e9).toFixed(1)}B`;
+        if (val >= 1e6) return `₱${(val / 1e6).toFixed(1)}M`;
+        if (val >= 1e3) return `₱${(val / 1e3).toFixed(1)}K`;
+      }
+      return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
+    }
+
+    function formatNumber(val) {
+      return new Intl.NumberFormat('en-PH').format(val);
+    }
+
+    /* ==========================================================================
+       6. UI RENDER ENGINE & GSAP COUNTERS
+       ========================================================================== */
+    function renderDashboard() {
+      // 1. Calculate metrics for current filtered set
+      const metrics = calculateMetrics(filteredDataset);
+
+      // 2. Update Hero Summary
+      document.getElementById('hero-target-pace').innerText = `${metrics.targetAchievement.toFixed(1)}%`;
+      document.getElementById('hero-revenue-summary').innerText = formatPHP(metrics.revenue, true);
+
+      // 3. Animate Executive KPI Cards with GSAP
+      animateCounter('#kpi-revenue', metrics.revenue, (val) => formatPHP(val, true));
+      animateCounter('#kpi-profit', metrics.profit, (val) => formatPHP(val, true));
+      document.getElementById('kpi-cost-subtext').innerText = `Cost: ${formatPHP(metrics.cost, true)}`;
+
+      animateCounter('#kpi-margin', metrics.profitMargin, (val) => `${val.toFixed(1)}%`);
+      document.getElementById('kpi-margin-status').innerText = metrics.profitMargin >= 50 ? "High Yield" : "Standard Yield";
+
+      animateCounter('#kpi-target-achieved', metrics.targetAchievement, (val) => `${val.toFixed(1)}%`);
+      document.getElementById('kpi-applicable-target').innerText = `Target: ${formatPHP(metrics.applicableTarget, true)}`;
+
+      animateCounter('#kpi-won-deals', metrics.closedWonDeals, (val) => formatNumber(Math.round(val)));
+      document.getElementById('kpi-total-opps').innerText = `Out of ${metrics.totalOpportunities} Opps`;
+      document.getElementById('kpi-win-rate').innerText = `Win Rate: ${metrics.winRate.toFixed(1)}%`;
+
+      animateCounter('#kpi-avg-deal', metrics.avgDealSize, (val) => formatPHP(val, true));
+      document.getElementById('kpi-units-sold').innerText = `${formatNumber(metrics.unitsSold)} Units Sold`;
+
+      // 4. Render Highcharts Visualizations
+      renderChartRevenueVsTarget();
+      renderChartProfitability();
+      renderSalespersonPerformance();
+      renderSalesFunnel(metrics);
+      renderRegionalPerformance();
+      renderProductIntelligence();
+      renderCustomerIntelligence();
+
+      // 5. Render Textual Insights & Audit Table
+      renderExecutiveInsights(metrics);
+      renderTransactionTable();
+    }
+
+    function animateCounter(selector, targetVal, formatFn) {
+      const el = document.querySelector(selector);
+      if (!el) return;
+
+      let obj = { val: 0 };
+      gsap.to(obj, {
+        val: targetVal,
+        duration: 1.2,
+        ease: "power2.out",
+        onUpdate: () => {
+          el.innerText = formatFn(obj.val);
+        }
+      });
+    }
+
+    /* ==========================================================================
+       7. HIGHCHARTS RENDERERS
+       ========================================================================== */
+    
+    // CHART 1: Revenue vs Target
+    function renderChartRevenueVsTarget() {
+      // Aggregate by month (1 to 12)
+      const monthlyData = Array.from({ length: 12 }, (_, i) => {
+        const monthNum = i + 1;
+        const monthRecords = filteredDataset.filter(r => {
+          const d = new Date(r.sale_date);
+          return (d.getMonth() + 1) === monthNum;
+        });
+
+        const won = monthRecords.filter(r => r.status === "Closed Won");
+        const rev = won.reduce((s, r) => s + r.sales_amount, 0);
+
+        // Deduplicated target for month
+        const targetMap = new Map();
+        monthRecords.forEach(r => {
+          if (!targetMap.has(r.salesperson_id)) {
+            targetMap.set(r.salesperson_id, Number(r.monthly_target) || 0);
+          }
+        });
+        let target = 0;
+        targetMap.forEach(v => target += v);
+
+        return { month: monthNum, rev, target };
+      });
+
+      const categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const revSeries = monthlyData.map(d => d.rev);
+      const targetSeries = monthlyData.map(d => d.target);
+
+      Highcharts.chart('chart-revenue-target', {
+        chart: { type: 'spline', backgroundColor: 'transparent' },
+        title: { text: null },
+        xAxis: { categories: categories },
+        yAxis: {
+          title: { text: null },
+          labels: { formatter: function() { return formatPHP(this.value, true); } }
+        },
+        colors: ['#10b981', '#38bdf8'],
+        series: [
+          { name: 'Closed Won Revenue', data: revSeries, marker: { symbol: 'circle' } },
+          { name: 'Monthly Target', data: targetSeries, dashStyle: 'ShortDash', marker: { enabled: false } }
+        ],
+        tooltip: {
+          shared: true,
+          formatter: function() {
+            let s = `<b style="color:#f8fafc">${this.x} 2025</b><br/>`;
+            let rev = 0, target = 0;
+            this.points.forEach(p => {
+              s += `<span style="color:${p.color}">●</span> ${p.series.name}: <b>${formatPHP(p.y)}</b><br/>`;
+              if (p.series.name === 'Closed Won Revenue') rev = p.y;
+              if (p.series.name === 'Monthly Target') target = p.y;
+            });
+            const diff = rev - target;
+            const pct = target > 0 ? (rev / target) * 100 : 0;
+            s += `<span style="color:${diff >= 0 ? '#10b981':'#ef4444'}">Variance: ${formatPHP(diff)} (${pct.toFixed(1)}%)</span>`;
+            return s;
+          }
+        },
+        credits: { enabled: false }
+      });
+    }
+
+    // CHART 2: Profitability
+    function renderChartProfitability() {
+      const monthlyData = Array.from({ length: 12 }, (_, i) => {
+        const monthNum = i + 1;
+        const won = filteredDataset.filter(r => {
+          const d = new Date(r.sale_date);
+          return (d.getMonth() + 1) === monthNum && r.status === "Closed Won";
+        });
+
+        const rev = won.reduce((s, r) => s + r.sales_amount, 0);
+        const profit = won.reduce((s, r) => s + r.profit, 0);
+        const margin = rev > 0 ? (profit / rev) * 100 : 0;
+
+        return { rev, profit, margin };
+      });
+
+      const categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+      Highcharts.chart('chart-profitability', {
+        chart: { backgroundColor: 'transparent' },
+        title: { text: null },
+        xAxis: { categories: categories },
+        yAxis: [{
+          title: { text: null },
+          labels: { formatter: function() { return formatPHP(this.value, true); } }
+        }, {
+          title: { text: null },
+          labels: { format: '{value}%' },
+          opposite: true,
+          max: 100
+        }],
+        series: [
+          { type: 'column', name: 'Gross Profit', data: monthlyData.map(d => d.profit), color: '#0369a1' },
+          { type: 'spline', name: 'Profit Margin %', yAxis: 1, data: monthlyData.map(d => Number(d.margin.toFixed(1))), color: '#eab308' }
+        ],
+        tooltip: { shared: true },
+        credits: { enabled: false }
+      });
+    }
+
+    // CHART 3 & TABLE: Sales Force Performance
+    function renderSalespersonPerformance() {
+      // Group by salesperson
+      const repMap = new Map();
+
+      filteredDataset.forEach(r => {
+        if (!repMap.has(r.salesperson_id)) {
+          repMap.set(r.salesperson_id, {
+            id: r.salesperson_id,
+            name: r.salesperson,
+            region: r.region,
+            revenue: 0,
+            wonDeals: 0,
+            lostDeals: 0,
+            records: []
+          });
+        }
+        const rep = repMap.get(r.salesperson_id);
+        rep.records.push(r);
+        if (r.status === "Closed Won") {
+          rep.revenue += r.sales_amount;
+          rep.wonDeals++;
+        } else if (r.status === "Closed Lost") {
+          rep.lostDeals++;
+        }
+      });
+
+      const repList = [];
+      repMap.forEach(rep => {
+        // Deduplicated target
+        const monthTargetMap = new Map();
+        rep.records.forEach(r => {
+          const d = new Date(r.sale_date);
+          const key = `${d.getFullYear()}_${d.getMonth() + 1}`;
+          if (!monthTargetMap.has(key)) {
+            monthTargetMap.set(key, Number(r.monthly_target) || 0);
+          }
+        });
+        let target = 0;
+        monthTargetMap.forEach(v => target += v);
+
+        const achv = target > 0 ? (rep.revenue / target) * 100 : 0;
+        repList.push({
+          ...rep,
+          target,
+          achv
+        });
+      });
+
+      // Sort by Revenue descending
+      repList.sort((a, b) => b.revenue - a.revenue);
+
+      // Render Horizontal Bar Chart
+      Highcharts.chart('chart-salesperson-bars', {
+        chart: { type: 'bar', backgroundColor: 'transparent' },
+        title: { text: null },
+        xAxis: { categories: repList.map(r => r.name) },
+        yAxis: {
+          title: { text: null },
+          labels: { formatter: function() { return formatPHP(this.value, true); } }
+        },
+        legend: { enabled: false },
+        series: [{
+          name: 'Revenue',
+          data: repList.map(r => ({
+            y: r.revenue,
+            repName: r.name
+          })),
+          color: '#38bdf8',
+          point: {
+            events: {
+              click: function() {
+                filterBySalesperson(this.repName);
+              }
+            }
+          }
+        }],
+        credits: { enabled: false }
+      });
+
+      // Render Leaderboard Table
+      const tbody = document.getElementById('tbody-salesperson-leaderboard');
+      tbody.innerHTML = '';
+
+      repList.forEach((rep, idx) => {
+        let statusBadge = '';
+        if (rep.achv >= 100) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400">Exceeding</span>';
+        } else if (rep.achv >= 80) {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-500/20 text-sky-400">On Track</span>';
+        } else {
+          statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400">Attention</span>';
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/50 cursor-pointer transition-colors";
+        tr.onclick = () => filterBySalesperson(rep.name);
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-bold text-slate-400">#${idx + 1}</td>
+          <td class="py-2.5 px-3 font-sans font-semibold text-white">${rep.name}</td>
+          <td class="py-2.5 px-3 text-slate-400 font-sans">${rep.region}</td>
+          <td class="py-2.5 px-3 text-right font-bold text-white">${formatPHP(rep.revenue, true)}</td>
+          <td class="py-2.5 px-3 text-right text-slate-400">${formatPHP(rep.target, true)}</td>
+          <td class="py-2.5 px-3 text-right font-bold ${rep.achv >= 100 ? 'text-emerald-400' : 'text-slate-300'}">${rep.achv.toFixed(1)}%</td>
+          <td class="py-2.5 px-3 text-center">${statusBadge}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // CHART 4: Sales Funnel / Outcomes
+    function renderSalesFunnel(metrics) {
+      document.getElementById('funnel-won-val').innerText = formatPHP(metrics.revenue, true);
+      document.getElementById('funnel-lost-val').innerText = formatPHP(metrics.lostOpportunityValue, true);
+      
+      const cancelledVal = filteredDataset
+        .filter(r => r.status === "Cancelled")
+        .reduce((s, r) => s + r.sales_amount, 0);
+      document.getElementById('funnel-cancelled-val').innerText = formatPHP(cancelledVal, true);
+
+      Highcharts.chart('chart-sales-funnel', {
+        chart: { type: 'funnel', backgroundColor: 'transparent' },
+        title: { text: null },
+        plotOptions: {
+          series: {
+            dataLabels: {
+              enabled: true,
+              format: '<b>{point.name}</b>: {point.y}',
+              softConnector: true,
+              style: { color: '#f8fafc', fontSize: '11px' }
+            },
+            center: ['50%', '50%'],
+            neckWidth: '30%',
+            neckHeight: '25%',
+            width: '80%'
+          }
+        },
+        legend: { enabled: false },
+        series: [{
+          name: 'Count',
+          data: [
+            { name: 'Total Opportunities', y: metrics.totalOpportunities, color: '#3b82f6' },
+            { name: 'Closed Won', y: metrics.closedWonDeals, color: '#10b981' },
+            { name: 'Closed Lost', y: metrics.closedLostDeals, color: '#ef4444' },
+            { name: 'Cancelled', y: metrics.cancelledDeals, color: '#64748b' }
+          ]
+        }],
+        credits: { enabled: false }
+      });
+    }
+
+    // CHART 5: Regional Performance
+    function renderRegionalPerformance() {
+      const regions = ["NCR", "North Luzon", "South Luzon", "Visayas", "Mindanao"];
+      const regionalData = regions.map(reg => {
+        const regRecords = filteredDataset.filter(r => r.region === reg);
+        const won = regRecords.filter(r => r.status === "Closed Won");
+        const rev = won.reduce((s, r) => s + r.sales_amount, 0);
+
+        // Deduplicated target
+        const targetMap = new Map();
+        regRecords.forEach(r => {
+          const d = new Date(r.sale_date);
+          const key = `${r.salesperson_id}_${d.getFullYear()}_${d.getMonth() + 1}`;
+          if (!targetMap.has(key)) {
+            targetMap.set(key, Number(r.monthly_target) || 0);
+          }
+        });
+        let target = 0;
+        targetMap.forEach(v => target += v);
+
+        return { reg, rev, target };
+      });
+
+      Highcharts.chart('chart-regional-bars', {
+        chart: { type: 'column', backgroundColor: 'transparent' },
+        title: { text: null },
+        xAxis: { categories: regions },
+        yAxis: {
+          title: { text: null },
+          labels: { formatter: function() { return formatPHP(this.value, true); } }
+        },
+        series: [
+          { name: 'Revenue', data: regionalData.map(d => d.rev), color: '#10b981' },
+          { name: 'Target', data: regionalData.map(d => d.target), color: '#334155' }
+        ],
+        plotOptions: {
+          series: {
+            cursor: 'pointer',
+            point: {
+              events: {
+                click: function() {
+                  filterByRegion(this.category);
+                }
+              }
+            }
+          }
+        },
+        credits: { enabled: false }
+      });
+    }
+
+    // CHART 6: Product & Category Intelligence
+    function renderProductIntelligence() {
+      const catMap = new Map();
+      filteredDataset.filter(r => r.status === "Closed Won").forEach(r => {
+        catMap.set(r.category, (catMap.get(r.category) || 0) + r.sales_amount);
+      });
+
+      const donutData = [];
+      catMap.forEach((val, key) => {
+        donutData.push({ name: key, y: val });
+      });
+
+      Highcharts.chart('chart-category-donut', {
+        chart: { type: 'pie', backgroundColor: 'transparent' },
+        title: { text: null },
+        plotOptions: {
+          pie: {
+            innerSize: '60%',
+            dataLabels: {
+              enabled: true,
+              format: '<b>{point.name}</b><br>{point.percentage:.1f}%',
+              style: { color: '#f8fafc', fontSize: '11px' }
+            }
+          }
+        },
+        colors: ['#0284c7', '#10b981', '#f59e0b', '#8b5cf6'],
+        series: [{
+          name: 'Revenue',
+          data: donutData,
+          point: {
+            events: {
+              click: function() {
+                filterByCategory(this.name);
+              }
+            }
+          }
+        }],
+        credits: { enabled: false }
+      });
+    }
+
+    // CHART 7: Top Customer Intelligence
+    function renderCustomerIntelligence() {
+      const custMap = new Map();
+      filteredDataset.filter(r => r.status === "Closed Won").forEach(r => {
+        if (!custMap.has(r.customer)) {
+          custMap.set(r.customer, { name: r.customer, revenue: 0, deals: 0 });
+        }
+        const c = custMap.get(r.customer);
+        c.revenue += r.sales_amount;
+        c.deals++;
+      });
+
+      const custArray = Array.from(custMap.values())
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 10);
+
+      const tbody = document.getElementById('tbody-top-customers');
+      tbody.innerHTML = '';
+
+      custArray.forEach((c, idx) => {
+        const avg = c.deals > 0 ? c.revenue / c.deals : 0;
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition-colors";
+        tr.innerHTML = `
+          <td class="py-2.5 px-2 font-bold text-slate-500">#${idx + 1}</td>
+          <td class="py-2.5 px-2 font-sans font-medium text-white">${c.name}</td>
+          <td class="py-2.5 px-2 text-right font-bold text-emerald-400">${formatPHP(c.revenue, true)}</td>
+          <td class="py-2.5 px-2 text-right text-slate-300">${c.deals}</td>
+          <td class="py-2.5 px-2 text-right text-slate-400">${formatPHP(avg, true)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ==========================================================================
+       8. DYNAMIC EXECUTIVE INSIGHTS GENERATOR
+       ========================================================================== */
+    function renderExecutiveInsights(metrics) {
+      const container = document.getElementById('executive-insights-container');
+      container.innerHTML = '';
+
+      const insights = [];
+
+      // Insight 1: Target Achievement
+      if (metrics.targetAchievement >= 100) {
+        insights.push({
+          type: 'positive',
+          icon: 'trending-up',
+          title: 'Target Exceeded',
+          text: `Recognized revenue is currently exceeding target by ${(metrics.targetAchievement - 100).toFixed(1)}%.`
+        });
+      } else {
+        insights.push({
+          type: 'warning',
+          icon: 'alert-triangle',
+          title: 'Target Gap Identified',
+          text: `Revenue currently tracks at ${metrics.targetAchievement.toFixed(1)}% of applicable quota (Gap: ${formatPHP(metrics.applicableTarget - metrics.revenue, true)}).`
+        });
+      }
+
+      // Insight 2: Top Region
+      const regMap = new Map();
+      filteredDataset.filter(r => r.status === "Closed Won").forEach(r => {
+        regMap.set(r.region, (regMap.get(r.region) || 0) + r.sales_amount);
+      });
+      let topRegion = { name: 'N/A', rev: 0 };
+      regMap.forEach((v, k) => { if (v > topRegion.rev) topRegion = { name: k, rev: v }; });
+
+      insights.push({
+        type: 'info',
+        icon: 'map-pin',
+        title: 'Regional Revenue Leader',
+        text: `${topRegion.name} represents the highest performing commercial territory at ${formatPHP(topRegion.rev, true)}.`
+      });
+
+      // Insight 3: Lost Opportunities
+      if (metrics.lostOpportunityValue > 0) {
+        insights.push({
+          type: 'negative',
+          icon: 'x-circle',
+          title: 'Pipeline Loss Leakage',
+          text: `Closed Lost opportunities represent ${formatPHP(metrics.lostOpportunityValue, true)} across ${metrics.closedLostDeals} uncaptured deals.`
+        });
+      }
+
+      // Render cards
+      insights.forEach(ins => {
+        let borderClr = 'border-sky-500/30 bg-sky-950/20';
+        let iconClr = 'text-sky-400';
+
+        if (ins.type === 'positive') { borderClr = 'border-emerald-500/30 bg-emerald-950/20'; iconClr = 'text-emerald-400'; }
+        if (ins.type === 'warning') { borderClr = 'border-amber-500/30 bg-amber-950/20'; iconClr = 'text-amber-400'; }
+        if (ins.type === 'negative') { borderClr = 'border-rose-500/30 bg-rose-950/20'; iconClr = 'text-rose-400'; }
+
+        const card = document.createElement('div');
+        card.className = `p-3.5 rounded-xl border ${borderClr} flex items-start space-x-3`;
+        card.innerHTML = `
+          <div class="${iconClr} mt-0.5"><i data-lucide="${ins.icon}" class="w-4 h-4"></i></div>
+          <div>
+            <p class="text-xs font-bold text-white">${ins.title}</p>
+            <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">${ins.text}</p>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    /* ==========================================================================
+       9. AUDIT TRANSACTION TABLE & PAGINATION
+       ========================================================================== */
+    function renderTransactionTable() {
+      // 1. Filter by search query
+      let data = filteredDataset;
+      if (currentSearchQuery.trim() !== '') {
+        const q = currentSearchQuery.toLowerCase();
+        data = data.filter(r => 
+          r.sale_id.toLowerCase().includes(q) ||
+          r.customer.toLowerCase().includes(q) ||
+          r.salesperson.toLowerCase().includes(q) ||
+          r.product.toLowerCase().includes(q) ||
+          r.region.toLowerCase().includes(q)
+        );
+      }
+
+      const totalRecords = data.length;
+      const totalPages = Math.ceil(totalRecords / pageSize) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalRecords);
+      const pageData = data.slice(startIndex, endIndex);
+
+      // Render Counter
+      document.getElementById('table-counter').innerText = 
+        `Showing ${totalRecords > 0 ? startIndex + 1 : 0}–${endIndex} of ${totalRecords} records`;
+      document.getElementById('table-page-num').innerText = `Page ${currentPage} of ${totalPages}`;
+
+      // Buttons
+      document.getElementById('btn-prev-page').disabled = currentPage === 1;
+      document.getElementById('btn-next-page').disabled = currentPage === totalPages;
+
+      // Render Tbody
+      const tbody = document.getElementById('tbody-transactions');
+      tbody.innerHTML = '';
+
+      if (pageData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="py-6 text-center text-slate-500 italic">No matching transaction records found</td></tr>`;
+        return;
+      }
+
+      pageData.forEach(r => {
+        let badge = '';
+        if (r.status === 'Closed Won') badge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400">Closed Won</span>';
+        else if (r.status === 'Closed Lost') badge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/20 text-rose-400">Closed Lost</span>';
+        else badge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-400">Cancelled</span>';
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition-colors";
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-mono font-semibold text-slate-300">${r.sale_id}</td>
+          <td class="py-2.5 px-3 font-sans text-slate-400">${r.sale_date}</td>
+          <td class="py-2.5 px-3 font-sans text-white">${r.salesperson}</td>
+          <td class="py-2.5 px-3 font-sans text-slate-400">${r.region}</td>
+          <td class="py-2.5 px-3 font-sans text-slate-200">${r.customer}</td>
+          <td class="py-2.5 px-3 font-sans text-slate-300">${r.product}</td>
+          <td class="py-2.5 px-3 text-right font-mono">${r.quantity}</td>
+          <td class="py-2.5 px-3 text-right font-mono font-bold text-white">${formatPHP(r.sales_amount)}</td>
+          <td class="py-2.5 px-3 text-right font-mono text-emerald-400">${formatPHP(r.profit)}</td>
+          <td class="py-2.5 px-3 text-center">${badge}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ==========================================================================
+       10. INTERACTIVE FILTER ENGINE & DRILL-DOWN ROUTING
+       ========================================================================== */
+    function populateFilterDropdowns() {
+      const salespersons = [...new Set(rawDataset.map(r => r.salesperson))].sort();
+      const categories = [...new Set(rawDataset.map(r => r.category))].sort();
+      const products = [...new Set(rawDataset.map(r => r.product))].sort();
+
+      const repSelect = document.getElementById('filter-salesperson');
+      salespersons.forEach(rep => {
+        const opt = document.createElement('option');
+        opt.value = rep; opt.innerText = rep;
+        repSelect.appendChild(opt);
+      });
+
+      const catSelect = document.getElementById('filter-category');
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat; opt.innerText = cat;
+        catSelect.appendChild(opt);
+      });
+
+      const prodSelect = document.getElementById('filter-product');
+      products.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p; opt.innerText = p;
+        prodSelect.appendChild(opt);
+      });
+    }
+
+    function applyFilters() {
+      activeFilters.region = document.getElementById('filter-region').value;
+      activeFilters.salesperson = document.getElementById('filter-salesperson').value;
+      activeFilters.category = document.getElementById('filter-category').value;
+      activeFilters.product = document.getElementById('filter-product').value;
+      activeFilters.status = document.getElementById('filter-status').value;
+      activeFilters.month = document.getElementById('filter-month').value;
+
+      filteredDataset = rawDataset.filter(r => {
+        if (activeFilters.region !== "ALL" && r.region !== activeFilters.region) return false;
+        if (activeFilters.salesperson !== "ALL" && r.salesperson !== activeFilters.salesperson) return false;
+        if (activeFilters.category !== "ALL" && r.category !== activeFilters.category) return false;
+        if (activeFilters.product !== "ALL" && r.product !== activeFilters.product) return false;
+        if (activeFilters.status !== "ALL" && r.status !== activeFilters.status) return false;
+        if (activeFilters.month !== "ALL") {
+          const m = (new Date(r.sale_date).getMonth() + 1).toString();
+          if (m !== activeFilters.month) return false;
+        }
+        return true;
+      });
+
+      renderActiveChips();
+      renderDashboard();
+    }
+
+    function resetFilters() {
+      document.getElementById('filter-region').value = "ALL";
+      document.getElementById('filter-salesperson').value = "ALL";
+      document.getElementById('filter-category').value = "ALL";
+      document.getElementById('filter-product').value = "ALL";
+      document.getElementById('filter-status').value = "ALL";
+      document.getElementById('filter-month').value = "ALL";
+      applyFilters();
+    }
+
+    function renderActiveChips() {
+      const container = document.getElementById('active-filter-chips');
+      container.innerHTML = '';
+
+      let activeCount = 0;
+      Object.keys(activeFilters).forEach(key => {
+        const val = activeFilters[key];
+        if (val !== "ALL") {
+          activeCount++;
+          const chip = document.createElement('span');
+          chip.className = "inline-flex items-center space-x-1 px-2.5 py-1 rounded-full bg-sky-950 text-sky-300 border border-sky-800 text-xs font-medium";
+          chip.innerHTML = `
+            <span class="capitalize">${key}: ${val}</span>
+            <button onclick="removeFilter('${key}')" class="hover:text-white ml-1">&times;</button>
+          `;
+          container.appendChild(chip);
+        }
+      });
+
+      if (activeCount === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-500 italic">No active filters applied</span>`;
+      }
+    }
+
+    function removeFilter(key) {
+      document.getElementById(`filter-${key}`).value = "ALL";
+      applyFilters();
+    }
+
+    // Drill-down helpers
+    function filterBySalesperson(repName) {
+      document.getElementById('filter-salesperson').value = repName;
+      applyFilters();
+    }
+    function filterByRegion(regionName) {
+      document.getElementById('filter-region').value = regionName;
+      applyFilters();
+    }
+    function filterByCategory(catName) {
+      document.getElementById('filter-category').value = catName;
+      applyFilters();
+    }
+
+    /* ==========================================================================
+       11. EVENT LISTENERS & APPLICATION BOOTSTRAP
+       ========================================================================== */
+    function updateLoadingStatus(msg) {
+      document.getElementById('loading-status').innerText = msg;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Initialize Icons & AOS
+      lucide.createIcons();
+      AOS.init({ duration: 800, once: true });
+
+      // 2. Animate Initial Loading Bar
+      gsap.to('#loading-bar', { width: '100%', duration: 1.5, ease: 'power2.inOut' });
+
+      // 3. Fetch Data
+      await fetchSalesData();
+      filteredDataset = [...rawDataset];
+
+      // 4. Setup Controls
+      populateFilterDropdowns();
+
+      // Listeners
+      document.getElementById('btn-apply-filters').addEventListener('click', applyFilters);
+      document.getElementById('btn-reset-filters').addEventListener('click', resetFilters);
+
+      document.getElementById('table-search-input').addEventListener('input', (e) => {
+        currentSearchQuery = e.target.value;
+        currentPage = 1;
+        renderTransactionTable();
+      });
+
+      document.getElementById('btn-prev-page').addEventListener('click', () => {
+        if (currentPage > 1) { currentPage--; renderTransactionTable(); }
+      });
+      document.getElementById('btn-next-page').addEventListener('click', () => {
+        currentPage++; renderTransactionTable();
+      });
+
+      // 5. Hide Loader & Reveal Dashboard
+      gsap.to('#loading-overlay', {
+        opacity: 0,
+        duration: 0.5,
+        onComplete: () => {
+          document.getElementById('loading-overlay').style.display = 'none';
+          renderDashboard();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
