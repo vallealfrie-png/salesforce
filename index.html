@@ -770,11 +770,26 @@
       
       try {
         if (supabaseClient) {
-          const { data, error } = await supabaseClient
-            .from('sales_data')
-            .select('*');
+          async function fetchAllRows(offset = 0, limit = 1000) {
+            const { data, error } = await supabaseClient
+              .from('sales_data')
+              .select('*')
+              .range(offset, offset + limit - 1);
+            
+            if (error) throw error;
+            if (!data || data.length === 0) return [];
+
+            if (data.length === limit) {
+              const nextBatch = await fetchAllRows(offset + limit, limit);
+              return [...data, ...nextBatch];
+            }
+
+            return data;
+          }
+
+          const data = await fetchAllRows();
           
-          if (!error && data && data.length > 0) {
+          if (data && data.length > 0) {
             rawDataset = data;
             console.log("Data loaded from Supabase:", rawDataset.length, "records");
             return;
