@@ -187,7 +187,7 @@
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
     <!-- HERO SECTION -->
-    <section id="hero-section" class="glass-card rounded-2xl p-6 lg:p-8 relative overflow-hidden">
+    <section id="hero-section" class="glass-card rounded-2xl p-6 lg:p-8 relative overflow-hidden" data-aos="fade-up">
       <div class="absolute -right-12 -top-12 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
       <div class="absolute -left-12 -bottom-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -655,8 +655,8 @@
     /* ==========================================================================
        1. SUPABASE CLIENT & MOCK FALLBACK ARCHITECTURE
        ========================================================================== */
-    const SUPABASE_URL = "https://bgzaxjyapctactpgjyvx.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_9dwkA29d_d5Dmr3PnxYMpg_QU2D4z0K";
+    const SUPABASE_URL = "https://your-supabase-url.supabase.co";
+    const SUPABASE_ANON_KEY = "your-anon-key";
     
     let supabaseClient = null;
     if (SUPABASE_URL !== "https://your-supabase-url.supabase.co") {
@@ -1586,9 +1586,9 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // 1. Initialize Icons & AOS
+      // 1. Initialize Icons & AOS (once: false and mirror: true enable repeat scroll animations upward)
       lucide.createIcons();
-      AOS.init({ duration: 800, once: true });
+      AOS.init({ duration: 800, once: false, mirror: true });
 
       // 2. Animate Initial Loading Bar
       gsap.to('#loading-bar', { width: '100%', duration: 1.5, ease: 'power2.inOut' });
